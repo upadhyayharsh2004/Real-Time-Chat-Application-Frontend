@@ -24,10 +24,19 @@ let _historyIndex = 0;
 
 export default function ChatLayout() {
   const { user, logout, isAdmin } = useAuth();
-  const { notificationCount, recentChats, isOnline } = useChat();
+  const { notificationCount, recentChats, isOnline, roomUnreadCounts } = useChat();
   const navigate = useNavigate();
   const location = useLocation();
   const [activeNav, setActiveNav] = useState('dm');
+
+  // Compute total unread counts for DMs and Rooms
+  const totalDmUnread = Array.isArray(recentChats) 
+    ? recentChats.reduce((sum, chat) => sum + (chat.unreadCount ?? chat.UnreadCount ?? 0), 0)
+    : 0;
+
+  const totalRoomUnread = roomUnreadCounts 
+    ? Object.values(roomUnreadCounts).reduce((sum, count) => sum + count, 0)
+    : 0;
 
   console.log('[ChatLayout] User:', user, 'isAdmin:', isAdmin);
 
@@ -108,11 +117,25 @@ export default function ChatLayout() {
               <circle cx="16" cy="10" r="1.2" fill="white" />
             </svg>
           </div>
-          {NAV_ITEMS.map(item => (
-            <NavBtn key={item.id} item={item} active={activeNav === item.id}
-              badge={item.badge && notificationCount > 0 ? notificationCount : 0}
-              onClick={() => navTo(item)} />
-          ))}
+          {NAV_ITEMS.map(item => {
+            let badgeCount = 0;
+            if (item.id === 'notifications') {
+              badgeCount = notificationCount > 0 ? notificationCount : 0;
+            } else if (item.id === 'dm') {
+              badgeCount = totalDmUnread > 0 ? totalDmUnread : 0;
+            } else if (item.id === 'rooms') {
+              badgeCount = totalRoomUnread > 0 ? totalRoomUnread : 0;
+            }
+            return (
+              <NavBtn 
+                key={item.id} 
+                item={item} 
+                active={activeNav === item.id}
+                badge={badgeCount}
+                onClick={() => navTo(item)} 
+              />
+            );
+          })}
           {/* Admin icon removed as per request — admins land directly on dashboard */}
         </div>
         <div style={S.sideBottom}>
@@ -279,8 +302,29 @@ function DMListPanel() {
                     </span>
                   )}
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--text-2)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', marginTop: 2 }}>
-                  {lastMsg || (online ? 'Online' : 'Offline')}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 }}>
+                  <span style={{ fontSize: 12, color: 'var(--text-2)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', flex: 1 }}>
+                    {lastMsg || (online ? 'Online' : 'Offline')}
+                  </span>
+                  {((item.unreadCount ?? item.UnreadCount ?? 0) > 0) && !isActive && (
+                    <span style={{
+                      background: 'var(--accent)',
+                      color: 'white',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      minWidth: 18,
+                      height: 18,
+                      borderRadius: 9,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0 5px',
+                      marginLeft: 8,
+                      flexShrink: 0
+                    }}>
+                      {item.unreadCount ?? item.UnreadCount}
+                    </span>
+                  )}
                 </div>
               </div>
             </button>

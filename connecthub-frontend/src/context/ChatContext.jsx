@@ -186,6 +186,11 @@ export function ChatProvider({ children }) {
   const updateRecentChatInstant = useCallback((otherId, content, sentAt, partnerName, partnerAvatar, isMine) => {
     setRecentChats(prev => {
       const existing = prev.find(c => c.userId === otherId);
+      
+      // Check if this DM is currently open in the active URL
+      const activeDmMatch = window.location.pathname.match(/\/dm\/(\d+)/);
+      const isActiveDm = activeDmMatch && Number(activeDmMatch[1]) === Number(otherId);
+
       const updatedChat = {
         userId: otherId,
         userName: existing?.userName || partnerName || `user_${otherId}`,
@@ -193,7 +198,7 @@ export function ChatProvider({ children }) {
         avatarUrl: existing?.avatarUrl ?? partnerAvatar ?? null,
         lastMessage: content,
         lastMessageAt: sentAt || new Date().toISOString(),
-        unreadCount: isMine ? (existing?.unreadCount || 0) : ((existing?.unreadCount || 0) + 1),
+        unreadCount: (isMine || isActiveDm) ? 0 : (((existing?.unreadCount ?? existing?.UnreadCount ?? 0)) + 1),
         isOnline: existing?.isOnline || false,
       };
       const filtered = prev.filter(c => c.userId !== otherId);
@@ -214,8 +219,13 @@ export function ChatProvider({ children }) {
     const currentUser = userRef.current;
     try {
       let res;
-      if (type === 'dm') res = await messageApi.getDirectMessages(id);
-      else res = await messageApi.getRoomMessages(id);
+      if (type === 'dm') {
+        res = await messageApi.getDirectMessages(id);
+        // Clear unread count locally when DM is opened
+        setRecentChats(prev => prev.map(c => c.userId === id ? { ...c, unreadCount: 0 } : c));
+      } else {
+        res = await messageApi.getRoomMessages(id);
+      }
 
       const list = Array.isArray(res) ? res : (res?.data?.messages ?? res?.messages ?? res?.data ?? res?.items ?? []);
       const safeList = Array.isArray(list)
