@@ -154,6 +154,7 @@ export default function MessageBubble({ msg, convKey, onEdit, membersCount }) {
     e.preventDefault();
     if (fileLoading) return;
     setFileLoading(true);
+    const isImage = msg.messageType?.toUpperCase() === 'IMAGE';
     try {
       const token = localStorage.getItem('token');
       const url = getMediaUrl(msg.mediaUrl);
@@ -164,13 +165,18 @@ export default function MessageBubble({ msg, convKey, onEdit, membersCount }) {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.target = '_blank';
-      a.download = msg.content || 'file';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      if (isImage) {
+        // Open image in a new tab to VIEW it
+        window.open(blobUrl, '_blank', 'noreferrer');
+      } else {
+        // Download other files (PDF, txt, etc.)
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = msg.content || 'file';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
       setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
     } catch {
       // Fallback: open directly
