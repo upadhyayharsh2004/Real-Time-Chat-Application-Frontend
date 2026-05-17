@@ -153,24 +153,27 @@ export default function MessageBubble({ msg, convKey, onEdit, membersCount }) {
   const handleFileOpen = async (e) => {
     e.preventDefault();
     if (fileLoading) return;
-    // If it's an external URL, or a local API route, just open it directly to bypass popup blockers
-    if (msg.mediaUrl && (!msg.mediaUrl.includes('127.0.0.1') && !msg.mediaUrl.includes('localhost') || msg.mediaUrl.startsWith('/api/'))) {
-      window.open(getMediaUrl(msg.mediaUrl), '_blank', 'noreferrer');
-      return;
-    }
     setFileLoading(true);
     try {
-      const fileId = extractFileId(msg.mediaUrl);
-      if (fileId) {
-        const res = await mediaApi.getSasUrl(fileId);
-        const sasUrl = res?.data?.sasUrl || res?.sasUrl || res?.data?.url || res?.url;
-        if (sasUrl && typeof sasUrl === 'string') {
-          window.open(sasUrl, '_blank', 'noreferrer');
-          return;
-        }
-      }
-      window.open(getMediaUrl(msg.mediaUrl), '_blank', 'noreferrer');
+      const token = localStorage.getItem('token');
+      const url = getMediaUrl(msg.mediaUrl);
+      // Fetch with auth token to avoid 401 Unauthorized
+      const response = await fetch(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.target = '_blank';
+      a.download = msg.content || 'file';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
     } catch {
+      // Fallback: open directly
       window.open(getMediaUrl(msg.mediaUrl), '_blank', 'noreferrer');
     } finally {
       setFileLoading(false);
