@@ -217,6 +217,11 @@ export default function RoomsPanel() {
                 }}>
                   {room.roomType}
                 </span>
+                {isMember && roomUnreadCounts[rid] > 0 && !isActive && (
+                  <span style={S.unreadBadge}>
+                    {roomUnreadCounts[rid]}
+                  </span>
+                )}
                 {!isMember && (
                   <button onClick={(e) => { e.stopPropagation(); handleJoin(rid); }} style={S.joinBtn}>Join</button>
                 )}
