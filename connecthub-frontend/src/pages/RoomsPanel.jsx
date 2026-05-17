@@ -120,13 +120,15 @@ export default function RoomsPanel() {
     setCreating(false);
   };
 
-  const getRoomSubtitle = (room) => {
+  const getRoomSubtitle = (room, isMember) => {
+    // Non-members should NOT see last message (like WhatsApp)
+    if (!isMember) {
+      return room.description || `${room.memberCount || 0} members`;
+    }
     const rid = room.roomId || room.id;
     const ctxMsg = roomLastMessages?.[rid];
-
     if (ctxMsg?.lastMessage) return ctxMsg.lastMessage;
     if (room.lastMessageContent) return room.lastMessageContent;
-
     return room.description || `${room.memberCount || 0} members`;
   };
 
@@ -187,7 +189,7 @@ export default function RoomsPanel() {
           const rid = room.roomId || room.id;
           const isActive = String(rid) === String(roomId);
           const isMember = myRooms.some(r => (r.roomId || r.id) === rid);
-          const subtitle = getRoomSubtitle(room);
+          const subtitle = getRoomSubtitle(room, isMember);
           return (
             <div key={rid} style={{ ...S.roomItem, ...(isActive ? S.roomItemActive : {}) }}
               onClick={() => (isMember || isAdmin) ? navigate(`/rooms/room/${rid}`) : null}>
