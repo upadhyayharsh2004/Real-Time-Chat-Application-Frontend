@@ -153,8 +153,9 @@ export default function MessageBubble({ msg, convKey, onEdit, membersCount }) {
   const handleFileOpen = async (e) => {
     e.preventDefault();
     if (fileLoading) return;
-    if (msg.mediaUrl && !msg.mediaUrl.includes('127.0.0.1') && !msg.mediaUrl.includes('localhost')) {
-      window.open(msg.mediaUrl, '_blank', 'noreferrer');
+    // If it's an external URL, or a local API route, just open it directly to bypass popup blockers
+    if (msg.mediaUrl && (!msg.mediaUrl.includes('127.0.0.1') && !msg.mediaUrl.includes('localhost') || msg.mediaUrl.startsWith('/api/'))) {
+      window.open(getMediaUrl(msg.mediaUrl), '_blank', 'noreferrer');
       return;
     }
     setFileLoading(true);
@@ -168,9 +169,9 @@ export default function MessageBubble({ msg, convKey, onEdit, membersCount }) {
           return;
         }
       }
-      window.open(msg.mediaUrl, '_blank', 'noreferrer');
+      window.open(getMediaUrl(msg.mediaUrl), '_blank', 'noreferrer');
     } catch {
-      window.open(msg.mediaUrl, '_blank', 'noreferrer');
+      window.open(getMediaUrl(msg.mediaUrl), '_blank', 'noreferrer');
     } finally {
       setFileLoading(false);
     }
@@ -267,7 +268,7 @@ export default function MessageBubble({ msg, convKey, onEdit, membersCount }) {
                 />
               ) : msg.mediaUrl ? (
                 <a
-                  href={msg.mediaUrl}
+                  href={getMediaUrl(msg.mediaUrl)}
                   onClick={handleFileOpen}
                   target="_blank"
                   rel="noreferrer"
