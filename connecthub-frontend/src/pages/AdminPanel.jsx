@@ -74,7 +74,7 @@ function DashboardTab({ onNavigate }) {
       const rawIds = Array.isArray(onlineData?.data) ? onlineData.data : Array.isArray(onlineData) ? onlineData : [];
       const adminId = currentUser?.userId || currentUser?.id;
       const isAdminOnline = rawIds.some(id => String(id) === String(adminId));
-      
+
       const rawCount = connData?.data?.activeConnections ?? connData?.activeConnections ?? connData ?? 0;
 
       setStats({
@@ -360,17 +360,17 @@ function RoomsTab() {
     try {
       const res = await adminRoomApi.getMembers(id);
       const raw = res?.data || res?.members || res || [];
-      
+
       // Resolve names for each member
       const resolved = await Promise.all(
         raw.map(async m => {
           try {
             const p = await authApi.getProfile(m.userId);
             const user = p?.data || p?.user || p;
-            return { 
-              ...m, 
+            return {
+              ...m,
               name: user?.displayName || user?.userName || `User ${m.userId}`,
-              avatarUrl: user?.avatarUrl || null 
+              avatarUrl: user?.avatarUrl || null
             };
           } catch {
             return { ...m, name: `User ${m.userId}` };
@@ -379,8 +379,8 @@ function RoomsTab() {
       );
 
       setMembers(m => ({ ...m, [id]: resolved }));
-    } catch { 
-      setMembers(m => ({ ...m, [id]: [] })); 
+    } catch {
+      setMembers(m => ({ ...m, [id]: [] }));
     }
   };
 
@@ -490,10 +490,11 @@ function MessagesTab() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
+      const baseUrl = process.env.REACT_APP_API_URL || 'https://connecthub-gateway-arvx.onrender.com';
       let url = mode === 'direct'
-        ? `http://localhost:5001/api/admin/messages/direct?senderId=${userId1}&receiverId=${userId2}`
-        : `http://localhost:5001/api/admin/messages/room/${roomId}`;
-      
+        ? `${baseUrl}/api/admin/messages/direct?senderId=${userId1}&receiverId=${userId2}`
+        : `${baseUrl}/api/admin/messages/room/${roomId}`;
+
       // Fetch messages and users list in parallel to resolve names
       const [msgRes, userRes] = await Promise.all([
         fetch(url, { headers: { Authorization: `Bearer ${token}` } }).then(x => x.json()),
@@ -502,7 +503,7 @@ function MessagesTab() {
 
       const msgs = msgRes?.data || msgRes?.messages || msgRes || [];
       const userList = userRes?.data || userRes?.users || userRes || [];
-      
+
       // Create name map
       const nameMap = {};
       userList.forEach(u => {
@@ -519,7 +520,8 @@ function MessagesTab() {
 
   const deleteMsg = async (id) => {
     try {
-      await fetch(`http://localhost:5001/api/admin/messages/${id}`, {
+      const baseUrl = process.env.REACT_APP_API_URL || 'https://connecthub-gateway-arvx.onrender.com';
+      await fetch(`${baseUrl}/api/admin/messages/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
@@ -624,7 +626,7 @@ function PresenceTab() {
       const rawIds = Array.isArray(idsVal?.data) ? idsVal.data : Array.isArray(idsVal) ? idsVal : [];
       const rawInfo = infoVal?.data || infoVal || [];
       const userList = usersVal?.data || usersVal?.users || usersVal || [];
-      
+
       // Create a name map
       const nameMap = {};
       userList.forEach(u => {
@@ -776,10 +778,10 @@ function BroadcastTab() {
       }
 
       // 2. Send the bulk notification
-      await notificationApi.sendBulk({ 
-        title: form.title, 
-        message: form.message, 
-        recipientIds: recipientIds 
+      await notificationApi.sendBulk({
+        title: form.title,
+        message: form.message,
+        recipientIds: recipientIds
       });
 
       setFeedback({ ok: true, msg: `✅ Broadcast sent to ${recipientIds.length} users!` });
@@ -861,46 +863,46 @@ const S = {
   wrap: { display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: 'var(--bg-0)' },
   header: { padding: '24px 32px 16px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
   headerLeft: { display: 'flex', alignItems: 'center', gap: 14 },
-  badge: { 
-    fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', color: 'var(--accent-light)', 
-    background: 'var(--accent-dim)', border: '1px solid var(--border-accent)', 
-    borderRadius: 8, padding: '4px 10px', textTransform: 'uppercase' 
+  badge: {
+    fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', color: 'var(--accent-light)',
+    background: 'var(--accent-dim)', border: '1px solid var(--border-accent)',
+    borderRadius: 8, padding: '4px 10px', textTransform: 'uppercase'
   },
   title: { fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 24, color: 'var(--text-0)', letterSpacing: '-0.02em' },
 
   tabs: { display: 'flex', overflowX: 'auto', padding: '0 28px 12px', gap: 6, flexShrink: 0 },
-  tab: { 
-    display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 12, 
-    fontSize: 14, fontWeight: 600, color: 'var(--text-2)', whiteSpace: 'nowrap', 
-    transition: 'all 0.2s ease', border: '1px solid transparent' 
+  tab: {
+    display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 12,
+    fontSize: 14, fontWeight: 600, color: 'var(--text-2)', whiteSpace: 'nowrap',
+    transition: 'all 0.2s ease', border: '1px solid transparent'
   },
   tabActive: { background: 'var(--accent-dim)', color: 'var(--accent-light)', border: '1px solid var(--border-accent)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
 
   content: { flex: 1, overflowY: 'auto', padding: '20px 32px 60px' },
 
   // Dashboard
-  welcomeBox: { 
-    display: 'flex', alignItems: 'center', gap: 18, background: 'linear-gradient(135deg, var(--bg-2) 0%, var(--bg-3) 100%)', 
+  welcomeBox: {
+    display: 'flex', alignItems: 'center', gap: 18, background: 'linear-gradient(135deg, var(--bg-2) 0%, var(--bg-3) 100%)',
     border: '1px solid var(--border)', borderRadius: 16, padding: '20px 24px',
     boxShadow: '0 10px 30px -10px rgba(0,0,0,0.3)'
   },
   statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20, marginBottom: 32 },
-  statCard: { 
-    background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 16, 
+  statCard: {
+    background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 16,
     padding: '24px 16px', textAlign: 'center', transition: 'all 0.2s ease',
     display: 'flex', flexDirection: 'column', alignItems: 'center'
   },
   sectionLabel: { fontSize: 11, fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 12 },
-  actionRow: { 
-    display: 'flex', alignItems: 'center', gap: 16, background: 'var(--bg-2)', border: '1px solid var(--border)', 
-    borderRadius: 14, padding: '16px 20px', cursor: 'pointer', transition: 'all 0.2s ease', 
-    width: '100%', textAlign: 'left' 
+  actionRow: {
+    display: 'flex', alignItems: 'center', gap: 16, background: 'var(--bg-2)', border: '1px solid var(--border)',
+    borderRadius: 14, padding: '16px 20px', cursor: 'pointer', transition: 'all 0.2s ease',
+    width: '100%', textAlign: 'left'
   },
-  actionIcon: { 
-    width: 44, height: 44, borderRadius: 12, background: 'var(--bg-4)', 
-    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 
+  actionIcon: {
+    width: 44, height: 44, borderRadius: 12, background: 'var(--bg-4)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0
   },
-  
+
   // Tables
   table: { width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' },
   th: { fontSize: 11, fontWeight: 800, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', padding: '0 12px 12px', textAlign: 'left' },
@@ -908,7 +910,7 @@ const S = {
   td: { padding: '16px 12px', verticalAlign: 'middle', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' },
   tdLeft: { borderLeft: '1px solid var(--border)', borderTopLeftRadius: 12, borderBottomLeftRadius: 12 },
   tdRight: { borderRight: '1px solid var(--border)', borderTopRightRadius: 12, borderBottomRightRadius: 12 },
-  
+
   miniAvatar: { width: 36, height: 36, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: 'white', flexShrink: 0 },
 
   // Buttons
